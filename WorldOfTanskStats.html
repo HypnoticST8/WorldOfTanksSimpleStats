@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Fredoka+One|Nosifer" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>  
+ <style>
+        body {
+            background-image: url("https://image.shutterstock.com/z/stock-photo-tank-tracks-in-the-sand-51730075.jpg");
+            background-color: lightgoldenrodyellow; 
+        }
+
+        .jumbotronbg {
+            background-image: url('https://image.shutterstock.com/z/stock-photo-sherman-m-a-ww-tank-27334834.jpg');
+            background-color: #5F5F19;
+            background-repeat: no-repeat;
+        }
+
+        #statusMsg {
+            display: inline !important;
+        }
+
+        table {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        td {
+            vertical-align: middle !important;
+            font-size: 18px;
+        }
+
+        th {
+            text-align: center !important;
+            font: 22px 'Nosifer', cursive;
+            color: red;
+            background: black;
+        }
+
+</style>
+
+</head>
+<body>
+
+<div class="container">
+    <div class="jumbotron" style="background-image:url('https://image.shutterstock.com/z/stock-photo-sherman-m-a-ww-tank-27334834.jpg'); background-repeat: no-repeat;">
+        <h1>World Of Tanks</h1>
+        <p>Player statistics</p>
+    </div>
+</div>
+
+<div class="container">
+    <div id="statusBar" class="row alert alert-info">
+        <form id="inputPlayerNickForm" class="form-inline">
+            <div class="col-md-12">
+                <div id="form-div" class="form-group has-feedback">
+                    <label class="sr-only" for="myNick">Input nick:</label>
+                    <input type="text" id="myNick" class="form-control"/>
+                    <span id="form-div-icon" class="form-control-feedback glyphicon"></span>
+                </div>
+                <button type="button" id="myButton" class="btn btn-primary btn-md">Search for a player</button>
+                <span id="statusMsg" class="invisible"></span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="container">
+    <table id="vehiclesTable" class="table table-bordered text-center">
+        <thead> 
+            <tr><th>#</th><th>Vehicle</th><th>Vehicle type</th><th>Tier</th><th>Country</th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script type="text/javascript">
+"use strict";
+
+$(function () {
+    $("#myButton").addClass("disabled"); 
+    $("#myNick").prop('disabled', true);
+    $("#statusMsg").removeClass("show") 
+    var vehicles; 
+    $.ajax({
+        type: 'GET',
+        dataType: 'json',
+        url: 'https://api.worldoftanks.eu/wot/encyclopedia/tanks/?application_id=demo',
+    
+        error: function() {
+            console.log('Error getting data "var vehicles"');
+            console.log(JSON.stringify(data, null, '\t'));
+        },
+        success: function(data) {
+            $("#myButton").addClass("active").removeClass("disabled");
+            $("#myNick").prop('disabled', false);
+            vehicles = data;
+        },
+    });
+
+    $("#myNick").keypress(function(submitEvent) {
+        if(submitEvent.which == 13) {
+            submitEvent.preventDefault()
+            $("#myButton").click();
+        }
+    });
+
+    $("#myButton").click(function() {
+        $("#form-div").removeClass("has-success has-warning has-error");
+        $("#form-div-icon").removeClass("glyphicon-ok glyphicon-warning-sign glyphicon-remove");
+        $("#statusMsg").removeClass("alert-success alert-info alert-warning alert-danger");
+        var inputNick = $("#myNick").val();
+        console.log(inputNick);
+        if (inputNick.length > 3) {
+            findUserID(inputNick);
+            $("#statusMsg").addClass("invisible").removeClass("show");
+        } else {
+            $("#statusMsg").text("The player's nickname has not been entered or it is too short. Try again.");
+            $("#statusMsg").addClass("show alert alert-warning").removeClass("invisible");
+            $("#form-div").addClass("has-warning");
+            $("#form-div-icon").addClass("glyphicon-warning-sign");
+        }
+    });
+    
+function findUserID(nick) {
+    $.ajax({
+        type: 'GET',
+        dataType: 'json',
+        url: 'https://api.worldoftanks.eu/wot/account/list/?application_id=demo&search=' + nick,
+        
+        error: function() {
+           console.log('findUserID: Error getting data');
+           console.log(JSON.stringify(data, null, '\t'));
+        },
+        success: function(data) {
+            if (data.status == "ok") {
+                if (data.meta.count > 0) {
+                    for (var i = 0; i < data.data.length; i++) {
+                        var cycleNick = (data.data[i].nickname);
+                        if (cycleNick.toLowerCase == nick.toLowerCase) {
+                            var nickID = data.data[0].account_id;
+                            getUserVehicles(nickID, nick);
+                            $("#form-div").addClass("has-success");
+                            $("#form-div-icon").addClass("glyphicon-ok");
+                            $("#statusMsg").text("Player found. Downloading data.");
+                            $("#statusMsg").addClass("show alert alert-success").removeClass("invisible");
+                            break;
+                        } 
+                    }
+                } else {
+                    $("#form-div").addClass("has-error");
+                    $("#form-div-icon").addClass("glyphicon-remove");
+                    $("#statusMsg").text("The player with the given nickname does not.");
+                    $("#statusMsg").addClass("show alert alert-danger").removeClass("invisible");
+                }
+            }
+        },
+    });
+};        
+
+function getUserVehicles(userID, userNickname) {
+    $.ajax({
+        type: 'GET',
+        dataType: 'json',
+        url: 'https://api.worldoftanks.eu/wot/account/tanks/?application_id=demo&account_id=' + userID,
+        
+        error: function() {
+           console.log('getUserVehicles: Error getting data');
+        },
+        success: function(data) {
+            var vehiclesTable = $('#vehiclesTable tbody');
+            $('div.playerStats').prepend("Nickname: ${userNickname} (User ID: ${userID}"); 
+            if (data.data[userID].length > 0) {
+                var j = 1;
+                for (var i = 0; i < data.data[userID].length; i++) {
+                    var tankID = data.data[userID][i].tank_id;
+                    if (typeof vehicles.data[tankID] === "undefined") {
+                        console.log("ERROR: tankID=" + tankID);
+                    } else {
+                        var vehicleShortName = vehicles.data[tankID].name_i18n;
+                        var vehicleType = vehicles.data[tankID].type;
+                        var vehicleNation = vehicles.data[tankID].nation_i18n;
+                        var vehicleTier = vehicles.data[tankID].level;
+                        var currentVehicleClass = "";
+                        var curentTrColor = "";
+
+                        switch (vehicleType) {
+                            case "lightTank":
+                                currentVehicleClass = "Light Tank";
+                                break;
+                            case "mediumTank":
+                                currentVehicleClass = "Medium Tank";
+                                break;
+                            case "heavyTank":
+                                currentVehicleClass = "Heavy Tank";
+                                break;
+                            case "SPG":
+                                currentVehicleClass = "Artillery";
+                                break;
+                            case "AT-SPG":
+                                currentVehicleClass = "Tank Destroyer";
+                                break;
+                            default:
+                                console.log('ERROR: vehicle class not found');  
+                        }
+
+                        switch (vehicleType) {
+                            case "lightTank":
+                                curentTrColor = 'style="background: linear-gradient(to bottom, #50DC50, #50A050)"';
+                                break;
+                            case "mediumTank":
+                                curentTrColor = 'style="background: linear-gradient(to bottom, #FFFF00, #BEBE00)"';
+                                break;
+                            case "heavyTank":
+                                curentTrColor = 'style="background: linear-gradient(to bottom, #00FFFF, #00C8C8)"';
+                                break;
+                            case "SPG":
+                                curentTrColor = 'style="background: linear-gradient(to bottom, #ff0000, #b30000)"';
+                                break;
+                            case "AT-SPG":
+                                curentTrColor = 'style="background: linear-gradient(to bottom, #D200FF, #A100FF)"';
+                                break;
+                            default:
+                                console.log("Error: no color has been assigned to vehicle type");  
+                        }
+
+                        vehiclesTable.append(
+                            `<tr ${curentTrColor}><td>
+                            ${j++}
+                            </td>
+                            "</td><td>"
+                            ${vehicleShortName}
+                            "</td><td>"
+                            ${currentVehicleClass}
+                            "</td><td>"
+                            ${vehicleTier}
+                            "</td><td>"
+                            ${vehicleNation}
+                            "</td></tr>"`);
+                    }
+                }
+            $("#statusMsg").text("Player found downloading data.");
+            $("#statusMsg").addClass("show alert alert-success").removeClass("invisible");
+            }
+        }, 
+    });
+}
+
+});
+</script>
+</body>
+</html>
