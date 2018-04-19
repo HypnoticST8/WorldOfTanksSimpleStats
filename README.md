@@ -1,3 +1,4 @@
-# TonearmResonanceCalculator
-Script for calculating the resonance frequency of turntable tonearm and
-drawing nice graph using Highcharts library.
+# World Of Tanks simple statistics
+SPA for checking World of Tanks player tank statistics via Wargaming API.
+Player statistics are displayed in HTML table with different colors for each
+vehicle type.
