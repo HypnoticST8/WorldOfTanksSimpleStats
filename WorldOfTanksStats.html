@@ -224,20 +224,19 @@ function getUserVehicles(userID, userNickname) {
                             default:
                                 console.log("Error: no color has been assigned to vehicle type");  
                         }
-
                         vehiclesTable.append(
                             `<tr ${curentTrColor}><td>
                             ${j++}
                             </td>
-                            "</td><td>"
+                            <td>
                             ${vehicleShortName}
-                            "</td><td>"
+                            </td><td>
                             ${currentVehicleClass}
-                            "</td><td>"
+                            </td><td>
                             ${vehicleTier}
-                            "</td><td>"
+                            </td><td>
                             ${vehicleNation}
-                            "</td></tr>"`);
+                            </td></tr>`);
                     }
                 }
             $("#statusMsg").text("Player found downloading data.");
